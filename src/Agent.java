@@ -11,7 +11,7 @@ public class Agent {
 	float x, y, dx = 0, dy = 0, ddx, ddy;
 	short angle = 0;
 	boolean dead = false;
-	long respawnTime;
+	long respawnTime, invulnerableTime = 0;
 	byte[] avatarData;
 	
 	public Agent(int id, String username, Connection c){
@@ -20,6 +20,7 @@ public class Agent {
 		conn = c;
 		x = 720/2;
 		y = 720/2;
+		invulnerableTime = System.currentTimeMillis() + 1000;
 	}
 	
 	public void kill(){
@@ -52,7 +53,6 @@ public class Agent {
 		AsteroidFieldServer.server.sendToAllExceptTCP(id, packet);
 		
 		PacketUpdatePlayer playerUpdate = new PacketUpdatePlayer();
-		//playerUpdate.id = (short) id;
 		playerUpdate.id = -1;
 		playerUpdate.x = x;
 		playerUpdate.y = y;
@@ -62,5 +62,17 @@ public class Agent {
 		conn.sendUDP(playerUpdate);
 		playerUpdate.id = (short) id;
 		AsteroidFieldServer.server.sendToAllExceptUDP(id, playerUpdate);
+		
+		invulnerableTime = System.currentTimeMillis() + 6000;
+	}
+	
+	public boolean isInvulnerable(){
+		if(invulnerableTime == 0) return false;
+		if(System.currentTimeMillis() > invulnerableTime){
+			invulnerableTime = 0;
+			return false;
+		}else{
+			return true;
+		}
 	}
 }

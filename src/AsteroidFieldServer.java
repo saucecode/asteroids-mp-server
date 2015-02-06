@@ -70,7 +70,7 @@ public class AsteroidFieldServer extends Listener {
 					if(agent.y > 720) agent.dy = -agent.dy;
 					if(agent.y < 0) agent.dy = -agent.dy;
 					
-					if(agent.ddx != agent.dx || agent.ddy != agent.dy){
+					if((agent.ddx != agent.dx || agent.ddy != agent.dy) && !agent.isInvulnerable()){
 						double ax, ay; // acceleration, x/y
 						ax = agent.ddx-agent.dx;
 						ay = agent.ddy-agent.dy;
@@ -85,7 +85,6 @@ public class AsteroidFieldServer extends Listener {
 									double distance = Math.hypot(agent.x-asteroid.x, agent.y-asteroid.y);
 									if(distance > 250) continue;
 									double acceleration = 40.0/distance * 0.25;
-									// TODO System.out.println("Accelerating asteroid " + asteroid.id + " by " + acceleration + "m/s/s");
 									asteroid.vx += Math.sin(Math.toRadians(astAngle) + Math.PI) * acceleration;
 									asteroid.vy += Math.cos(Math.toRadians(astAngle) + Math.PI) * acceleration;
 									
@@ -105,14 +104,16 @@ public class AsteroidFieldServer extends Listener {
 					}
 					
 					// Check collisions
-					for(Asteroid asteroid : asteroids){
-						if(asteroid.shape.contains(agent.x-asteroid.x, agent.y-asteroid.y)){
-							if(!agent.dead){
-								if(agent.dx != 0 || agent.dy != 0)
-									createExplosionWithAngle(agent.x,agent.y, 250, 0.2f, calcDeclinationAngle(agent.x, agent.y, agent.x+agent.dx, agent.y+agent.dy));
-								else
-									createExplosion(agent.x,agent.y, 250, 0.2f);
-								agent.kill();
+					if(!agent.isInvulnerable()){
+						for(Asteroid asteroid : asteroids){
+							if(asteroid.shape.contains(agent.x-asteroid.x, agent.y-asteroid.y)){
+								if(!agent.dead){
+									if(agent.dx != 0 || agent.dy != 0)
+										createExplosionWithAngle(agent.x,agent.y, 250, 0.2f, calcDeclinationAngle(agent.x, agent.y, agent.x+agent.dx, agent.y+agent.dy));
+									else
+										createExplosion(agent.x,agent.y, 250, 0.2f);
+									agent.kill();
+								}
 							}
 						}
 					}
