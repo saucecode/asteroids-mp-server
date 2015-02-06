@@ -3,7 +3,7 @@ import com.esotericsoftware.kryonet.Connection;
 
 public class Agent {
 	
-	public static long RESPAWN_TIME = 5000L;
+	public static final long RESPAWN_TIME = 5000L, INVULNERABILITY_TIME = 2000L;
 
 	int id;
 	String username;
@@ -20,7 +20,22 @@ public class Agent {
 		conn = c;
 		x = 720/2;
 		y = 720/2;
-		invulnerableTime = System.currentTimeMillis() + 1000;
+		invulnerableTime = System.currentTimeMillis() + INVULNERABILITY_TIME;
+	}
+
+	public void update() {
+		if(dead){
+			if(respawnTime < System.currentTimeMillis()){
+				respawn();
+			}
+		}
+		x += dx;
+		y += dy;
+		
+		if(x > AsteroidFieldServer.WORLD_WIDTH) dx = -dx;
+		if(x < 0) dx = -dx;
+		if(y > AsteroidFieldServer.WORLD_HEIGHT) dy = -dy;
+		if(y < 0) dy = -dy;		
 	}
 	
 	public void kill(){
@@ -63,7 +78,7 @@ public class Agent {
 		playerUpdate.id = (short) id;
 		AsteroidFieldServer.server.sendToAllExceptUDP(id, playerUpdate);
 		
-		invulnerableTime = System.currentTimeMillis() + 6000;
+		invulnerableTime = System.currentTimeMillis() + INVULNERABILITY_TIME;
 	}
 	
 	public boolean isInvulnerable(){

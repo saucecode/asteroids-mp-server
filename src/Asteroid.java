@@ -15,4 +15,14 @@ public class Asteroid {
 		id = ASTEROID_ID;
 		ASTEROID_ID++;
 	}
+
+	public void update() {
+		x += vx;
+		y += vy;
+		
+		if(x > AsteroidFieldServer.WORLD_WIDTH) vx = -vx;
+		if(x < 0) vx = -vx;
+		if(y > AsteroidFieldServer.WORLD_HEIGHT) vy = -vy;
+		if(y < 0) vy = -vy;		
+	}
 }

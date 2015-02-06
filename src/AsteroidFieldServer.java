@@ -13,9 +13,13 @@ import com.esotericsoftware.kryonet.Server;
 
 public class AsteroidFieldServer extends Listener {
 
+	public static final int WORLD_WIDTH = 720, WORLD_HEIGHT = 720;
+	
 	static Server server;
 	static Random random = new Random();
 	static List<Asteroid> asteroids = new ArrayList<Asteroid>();
+	static long updateAsteroidTicker = System.currentTimeMillis() + 1000;
+	static long updatePlayersTicker = System.currentTimeMillis() + 1800;
 	
 	public static void main(String[] args){
 		System.out.println("Starting...");
@@ -39,43 +43,22 @@ public class AsteroidFieldServer extends Listener {
 		
 		asteroids.addAll(generateAsteroids(1));
 		
-		long updateAsteroidTicker = System.currentTimeMillis() + 1000;
-		long updatePlayersTicker = System.currentTimeMillis() + 1800;
-		
 		while(true){
 			try{
 				
 				for(Asteroid a : asteroids){
-					a.x += a.vx;
-					a.y += a.vy;
-					
-					if(a.x > 720) a.vx = -a.vx;
-					if(a.x < 0) a.vx = -a.vx;
-					if(a.y > 720) a.vy = -a.vy;
-					if(a.y < 0) a.vy = -a.vy;
+					a.update();
 				}
 				
 				for(Agent agent : agents){
 					if(agent == null) continue;
-					if(agent.dead){
-						if(agent.respawnTime < System.currentTimeMillis()){
-							agent.respawn();
-						}
-					}
-					agent.x += agent.dx;
-					agent.y += agent.dy;
 					
-					if(agent.x > 720) agent.dx = -agent.dx;
-					if(agent.x < 0) agent.dx = -agent.dx;
-					if(agent.y > 720) agent.dy = -agent.dy;
-					if(agent.y < 0) agent.dy = -agent.dy;
+					agent.update();
 					
 					if((agent.ddx != agent.dx || agent.ddy != agent.dy) && !agent.isInvulnerable()){
-						double ax, ay; // acceleration, x/y
-						ax = agent.ddx-agent.dx;
-						ay = agent.ddy-agent.dy;
-						//boolean forward = !(Math.abs(agent.ddx) - Math.abs(agent.dx) > 0 || Math.abs(agent.ddy) - Math.abs(agent.dy) > 0);
-						boolean forward = Math.hypot(ax,ay) > 0.03f;
+						double accelerationX = agent.ddx-agent.dx;
+						double accelerationY = agent.ddy-agent.dy;
+						boolean forward = Math.hypot(accelerationX, accelerationY) > 0.03f; // determine that the player is accelerating forwards
 						if(forward){
 							for(Asteroid asteroid : asteroids){
 								// check if behind
@@ -120,37 +103,13 @@ public class AsteroidFieldServer extends Listener {
 				}
 				
 				if(System.currentTimeMillis() > updateAsteroidTicker){
-					updateAsteroidTicker = System.currentTimeMillis() + 1000;
-					for(Asteroid a : asteroids){
-						PacketUpdateAsteroid packet = new PacketUpdateAsteroid();
-						packet.id = a.id;
-						packet.x = a.x;
-						packet.y = a.y;
-						packet.dx = a.vx;
-						packet.dy = a.vy;
-						server.sendToAllUDP(packet);
-					}
+					resyncAsteroids();
 				}
 				
 				if(System.currentTimeMillis() > updatePlayersTicker){
-					updatePlayersTicker = System.currentTimeMillis() + 1800;
-					for(Agent agent : agents){
-						if(agent == null) continue;
-						PacketUpdatePlayer packet = new PacketUpdatePlayer();
-						packet.id = (short) agent.id;
-						packet.x = agent.x;
-						packet.y = agent.y;
-						packet.dx = agent.dx;
-						packet.dy = agent.dy;
-						packet.angle = agent.angle;
-						
-						server.sendToAllExceptUDP(agent.id, packet);
-						packet.id = -1;
-						agent.conn.sendUDP(packet);
-					}
+					resyncPlayers();
 				}
 				
-				//Thread.sleep(16,670000);
 				Thread.sleep(16,666667);
 			}catch(Exception e){
 				e.printStackTrace();
@@ -159,6 +118,37 @@ public class AsteroidFieldServer extends Listener {
 		}
 	}
 	
+	private static void resyncPlayers() {
+		updatePlayersTicker = System.currentTimeMillis() + 1800;
+		for(Agent agent : agents){
+			if(agent == null) continue;
+			PacketUpdatePlayer packet = new PacketUpdatePlayer();
+			packet.id = (short) agent.id;
+			packet.x = agent.x;
+			packet.y = agent.y;
+			packet.dx = agent.dx;
+			packet.dy = agent.dy;
+			packet.angle = agent.angle;
+			
+			server.sendToAllExceptUDP(agent.id, packet);
+			packet.id = -1;
+			agent.conn.sendUDP(packet);
+		}		
+	}
+
+	private static void resyncAsteroids() {
+		updateAsteroidTicker = System.currentTimeMillis() + 3000;
+		for(Asteroid a : asteroids){
+			PacketUpdateAsteroid packet = new PacketUpdateAsteroid();
+			packet.id = a.id;
+			packet.x = a.x;
+			packet.y = a.y;
+			packet.dx = a.vx;
+			packet.dy = a.vy;
+			server.sendToAllUDP(packet);
+		}		
+	}
+
 	private static void createExplosion(float x, float y, int size, float force) {
 		for(Asteroid asteroid : asteroids){
 			//if(Math.abs(x - asteroid.x) < size && Math.abs(y - asteroid.y) < size){
