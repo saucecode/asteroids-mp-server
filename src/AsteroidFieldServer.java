@@ -91,10 +91,7 @@ public class AsteroidFieldServer extends Listener {
 						for(Asteroid asteroid : asteroids){
 							if(asteroid.shape.contains(agent.x-asteroid.x, agent.y-asteroid.y)){
 								if(!agent.dead){
-									if(agent.dx != 0 || agent.dy != 0)
-										createExplosionWithAngle(agent.x,agent.y, 250, 0.2f, calcDeclinationAngle(agent.x, agent.y, agent.x+agent.dx, agent.y+agent.dy));
-									else
-										createExplosion(agent.x,agent.y, 250, 0.2f);
+									createExplosion(agent.x,agent.y, 250, 0.2f);
 									agent.kill();
 								}
 							}
@@ -180,8 +177,8 @@ public class AsteroidFieldServer extends Listener {
 				if(distance < size){
 					double acceleration = size/distance * force;
 					//double angle = calcDeclinationAngle(x, y, asteroid.x, asteroid.y);
-					asteroid.vx += (Math.sin(Math.toRadians(angle) + Math.PI) * acceleration);
-					asteroid.vy += (Math.cos(Math.toRadians(angle) + Math.PI)) * acceleration;
+					asteroid.vx += Math.sin(Math.toRadians(angle) + Math.PI) * acceleration;
+					asteroid.vy += -Math.cos(Math.toRadians(angle) + Math.PI) * acceleration;
 					
 					PacketUpdateAsteroid packet = new PacketUpdateAsteroid();
 					packet.id = asteroid.id;
