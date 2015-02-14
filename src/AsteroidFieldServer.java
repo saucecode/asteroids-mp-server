@@ -20,6 +20,7 @@ public class AsteroidFieldServer extends Listener {
 	static List<Asteroid> asteroids = new ArrayList<Asteroid>();
 	static long updateAsteroidTicker = System.currentTimeMillis() + 1000;
 	static long updatePlayersTicker = System.currentTimeMillis() + 1800;
+	static GameMode activeGameMode = new GameModeDeathmatch();
 	
 	public static void main(String[] args){
 		System.out.println("Starting...");
@@ -34,6 +35,9 @@ public class AsteroidFieldServer extends Listener {
 			k.register(PacketDropPlayer.class);
 			k.register(PacketUpdatePlayer.class);
 			k.register(PacketPlayerState.class);
+			k.register(PacketDrawText.class);
+			k.register(PacketClearText.class);
+			k.register(PacketUpdateText.class);
 			server.bind(25565, 25565);
 			server.addListener(new AsteroidFieldServer());
 			server.start();
@@ -170,6 +174,7 @@ public class AsteroidFieldServer extends Listener {
 	}
 	
 	// same as createExplosion, but provide an angle (deg) instead of calculating it from x,y of explosion origin
+	// TODO also broken
 	private static void createExplosionWithAngle(float x, float y, int size, float force, double angle) {
 		for(Asteroid asteroid : asteroids){
 			//if(Math.abs(x - asteroid.x) < size && Math.abs(y - asteroid.y) < size){

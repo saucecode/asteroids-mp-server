@@ -13,6 +13,7 @@ public class Agent {
 	boolean dead = false;
 	long respawnTime, invulnerableTime = 0;
 	byte[] avatarData;
+	public short[] metaData = new short[8];
 	
 	public Agent(int id, String username, Connection c){
 		this.id = id;
@@ -35,7 +36,7 @@ public class Agent {
 		if(x > AsteroidFieldServer.WORLD_WIDTH) dx = -dx;
 		if(x < 0) dx = -dx;
 		if(y > AsteroidFieldServer.WORLD_HEIGHT) dy = -dy;
-		if(y < 0) dy = -dy;		
+		if(y < 0) dy = -dy;
 	}
 	
 	public void kill(){
@@ -53,11 +54,20 @@ public class Agent {
 		conn.sendTCP(packet);
 		packet.id = id;
 		AsteroidFieldServer.server.sendToAllExceptTCP(id, packet);
+		
+		PacketDrawText drawText = new PacketDrawText();
+		drawText.id = 69;
+		drawText.size = 24;
+		drawText.text = "You are dead!";
+		drawText.x = 40;
+		drawText.y = 40;
+		drawText.color = (byte) 2; // red
+		conn.sendTCP(drawText);
 	}
 
 	public void respawn() {
-		x = 720/2;
-		y = 720/4;
+		x = AsteroidFieldServer.WORLD_WIDTH/2;
+		y = AsteroidFieldServer.WORLD_HEIGHT/4;
 		dead = false;
 		
 		PacketPlayerState packet = new PacketPlayerState();
@@ -79,6 +89,10 @@ public class Agent {
 		AsteroidFieldServer.server.sendToAllExceptUDP(id, playerUpdate);
 		
 		invulnerableTime = System.currentTimeMillis() + INVULNERABILITY_TIME;
+		
+		PacketClearText clearText = new PacketClearText();
+		clearText.id = 69;
+		conn.sendTCP(clearText);
 	}
 	
 	public boolean isInvulnerable(){
