@@ -38,6 +38,8 @@ public class AsteroidFieldServer extends Listener {
 			k.register(PacketDrawText.class);
 			k.register(PacketClearText.class);
 			k.register(PacketUpdateText.class);
+			k.register(PacketRelayKeys.class);
+			k.register(PacketKeyPress.class);
 			server.bind(25565, 25565);
 			server.addListener(new AsteroidFieldServer());
 			server.start();

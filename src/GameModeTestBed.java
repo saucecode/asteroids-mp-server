@@ -1,5 +1,5 @@
 
-public class GameModeDeathmatch extends GameMode{
+public class GameModeTestBed extends GameMode {
 
 	public boolean allowPlayerToJoin() {
 		return true;
@@ -13,15 +13,22 @@ public class GameModeDeathmatch extends GameMode{
 		
 	}
 
-	public void onPlayerRespawn(Agent agent) {
+	public void onPlayerRespawn() {
 		
 	}
 
 	public void onPlayerJoin(Agent agent) {
-		
+		// Tell clients to relay their key presses.
+		PacketRelayKeys packetRelay = new PacketRelayKeys();
+		packetRelay.relayKeys = true;
+		agent.conn.sendTCP(packetRelay);
 	}
 
 	public void onServerStart(){
+		
+	}
+
+	public void onPlayerRespawn(Agent agent) {
 		
 	}
 
@@ -32,4 +39,5 @@ public class GameModeDeathmatch extends GameMode{
 	public void onPlayerDisconnect(Agent agent) {
 		
 	}
+	
 }
