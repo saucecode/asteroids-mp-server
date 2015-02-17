@@ -1,7 +1,7 @@
 
 public class GameModeDeathmatch extends GameMode{
 
-	public boolean allowPlayerToJoin() {
+	public boolean mayPlayerJoin() {
 		return true;
 	}
 

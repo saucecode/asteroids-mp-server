@@ -20,7 +20,7 @@ public class AsteroidFieldServer extends Listener {
 	static List<Asteroid> asteroids = new ArrayList<Asteroid>();
 	static long updateAsteroidTicker = System.currentTimeMillis() + 1000;
 	static long updatePlayersTicker = System.currentTimeMillis() + 1800;
-	static GameMode activeGameMode = new GameModeDeathmatch();
+	static GameMode activeGameMode = new GameModeTestBed();
 	
 	public static void main(String[] args){
 		System.out.println("Starting...");
@@ -48,9 +48,11 @@ public class AsteroidFieldServer extends Listener {
 		}
 		
 		asteroids.addAll(generateAsteroids(1));
+		activeGameMode.onServerStart();
 		
 		while(true){
 			try{
+				activeGameMode.onGameTick();
 				
 				for(Asteroid a : asteroids){
 					a.update();
@@ -214,6 +216,17 @@ public class AsteroidFieldServer extends Listener {
 			asteroid.vy = 5*(0.2f - 0.4f * random.nextFloat());
 			_asteroids.add(asteroid);
 			System.out.println("Generated asteroid " + i);
+			
+			PacketMakeAsteroid packet = new PacketMakeAsteroid();
+			packet.id = asteroid.id;
+			packet.pointCount = asteroid.shape.npoints;
+			packet.xpoints = asteroid.shape.xpoints;
+			packet.ypoints = asteroid.shape.ypoints;
+			packet.x = asteroid.x;
+			packet.y = asteroid.y;
+			packet.vx = asteroid.vx;
+			packet.vy = asteroid.vy;
+			server.sendToAllTCP(packet);
 		}
 		return _asteroids;
 	}
@@ -231,7 +244,7 @@ public class AsteroidFieldServer extends Listener {
 		if(o instanceof PacketJoin){
 			PacketJoin packet = (PacketJoin) o;
 			packet.id = c.getID();
-			packet.accepted = true;
+			packet.accepted = activeGameMode.mayPlayerJoin();
 			
 			if(packet.accepted){
 				server.sendToAllExceptTCP(c.getID(), packet);
@@ -239,7 +252,6 @@ public class AsteroidFieldServer extends Listener {
 				packet.id = -1;
 				c.sendTCP(packet);
 				
-				// TODO Potential client-side data race (assigning texture data to null agent)
 				for(int i=0; i<agents.length; i++){
 					if(agents[i] == null) continue;
 					PacketJoin addPlayer = new PacketJoin();
@@ -260,7 +272,13 @@ public class AsteroidFieldServer extends Listener {
 				sendAllAsteroidsTo(agents[c.getID()]);
 				
 				System.out.println("Player " + packet.username + " joined!");
+				activeGameMode.onPlayerJoin(agents[c.getID()]);
 				System.out.println("Sending asteroids...");
+			}else{
+				System.out.println("Rejecting player join request.");
+				c.sendTCP(packet);
+				c.close();
+				
 			}
 		}else if(o instanceof PacketUpdatePlayer){
 			PacketUpdatePlayer packet = (PacketUpdatePlayer) o;
@@ -273,6 +291,11 @@ public class AsteroidFieldServer extends Listener {
 			packet.y = agents[c.getID()].y;
 			
 			server.sendToAllExceptUDP(c.getID(), packet);
+			
+		}else if(o instanceof PacketKeyPress){
+			PacketKeyPress packet = (PacketKeyPress) o;
+			System.out.println("Key pressed " + (int) packet.key);
+			activeGameMode.onPlayerKeyPress(agents[c.getID()], (int) packet.key);
 		}
 	}
 
@@ -295,11 +318,12 @@ public class AsteroidFieldServer extends Listener {
 	}
 	
 	public void disconnected(Connection c){
-		agents[c.getID()] = null;
 		PacketDropPlayer packet = new PacketDropPlayer();
 		packet.id = c.getID();
 		server.sendToAllUDP(packet);
 		System.out.println("Dropped player " + c.getID());
+		activeGameMode.onPlayerDisconnect(agents[c.getID()]);
+		agents[c.getID()] = null;
 	}
 	
 	public static String md5(byte[] data){

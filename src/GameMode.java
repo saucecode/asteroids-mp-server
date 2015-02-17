@@ -6,7 +6,7 @@ public abstract class GameMode {
 	public abstract void onServerStart();
 	public abstract void onGameTick();
 	
-	public abstract boolean allowPlayerToJoin();
+	public abstract boolean mayPlayerJoin();
 	
 	public abstract void onPlayerJoin(Agent agent);
 	public abstract void onPlayerDeath(Agent agent);

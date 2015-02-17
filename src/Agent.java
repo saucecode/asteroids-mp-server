@@ -63,6 +63,8 @@ public class Agent {
 		drawText.y = 40;
 		drawText.color = (byte) 2; // red
 		conn.sendTCP(drawText);
+		
+		AsteroidFieldServer.activeGameMode.onPlayerDeath(this);
 	}
 
 	public void respawn() {
@@ -93,6 +95,8 @@ public class Agent {
 		PacketClearText clearText = new PacketClearText();
 		clearText.id = 69;
 		conn.sendTCP(clearText);
+		
+		AsteroidFieldServer.activeGameMode.onPlayerRespawn(this);
 	}
 	
 	public boolean isInvulnerable(){
